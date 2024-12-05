@@ -40,6 +40,18 @@ $categoriesQuery = $pdo->prepare("
 $categoriesQuery->execute(['user_id' => $userId]);
 $categoriesExpenses = $categoriesQuery->fetchAll(PDO::FETCH_ASSOC);
 
+// Prepara i dati per il grafico (solo categorie con spese > 0)
+$categoryLabels = [];
+$categoryTotals = [];
+foreach ($categoriesExpenses as $category) {
+    if ($category['total'] > 0) { // Considera solo le categorie con spese > 0
+        $categoryLabels[] = htmlspecialchars($category['category']);
+        $categoryTotals[] = $category['total'];
+    }
+}
+
+
+
 // Query per le spese recenti
 $recentExpensesQuery = $pdo->prepare("
     SELECT e.amount, e.description, e.date, c.name AS category 
@@ -110,14 +122,10 @@ $recentExpenses = $recentExpensesQuery->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card">
                     <div class="card-body">
                         <h5 class="card-title">Spese per Categoria</h5>
-                        <ul class="list-group">
-                            <?php foreach ($categoriesExpenses as $category): ?>
-                                <li class="list-group-item d-flex justify-content-between align-items-center">
-                                    <?= htmlspecialchars($category['category']) ?>
-                                    <span>€<?= number_format($category['total'], 2) ?></span>
-                                </li>
-                            <?php endforeach; ?>
-                        </ul>
+                        <canvas id="categoryExpensesChart" width="400" height="400"></canvas>
+                        <?php if (empty($categoryTotals)): ?>
+                            <p class="text-muted text-center mt-3">Nessuna spesa registrata nelle categorie.</p>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -158,6 +166,62 @@ $recentExpenses = $recentExpensesQuery->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+    // Dati per il grafico
+    const categoryLabels = <?= json_encode($categoryLabels) ?>;
+    const categoryTotals = <?= json_encode($categoryTotals) ?>;
+
+    if (categoryTotals.length > 0) {
+        const ctx = document.getElementById('categoryExpensesChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: categoryLabels,
+                datasets: [{
+                    label: 'Spese per Categoria',
+                    data: categoryTotals,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const value = context.raw;
+                                const percentage = ((value / total) * 100).toFixed(2);
+                                return `${context.label}: €${value.toFixed(2)} (${percentage}%)`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+    </script>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
