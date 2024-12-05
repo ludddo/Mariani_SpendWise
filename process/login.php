@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_name'] = $user['name'];
 
         // Reindirizza alla dashboard
-        header("Location: dashboard.php");
+        header("Location: ../application/dashboard.php");
         exit;
     } else {
         echo "Credenziali non valide. Riprova.";
