@@ -1,5 +1,4 @@
 <?php
-// Avvio sessione
 session_start();
 
 // Configurazione database
@@ -18,7 +17,7 @@ try {
 
 // Verifica che il form sia stato inviato
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
+    $email = filter_var(trim($_POST['email']), FILTER_SANITIZE_EMAIL);
     $password = trim($_POST['password']);
 
     // Controllo che i campi non siano vuoti
