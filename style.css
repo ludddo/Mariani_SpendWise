@@ -110,3 +110,9 @@ button[type="submit"]:hover {
         padding: 0.7rem;
     }
 }
+
+/* Stile per gli alert */
+.alert {
+    margin-bottom: 1.5rem;
+    border-radius: 5px;
+}
