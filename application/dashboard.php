@@ -91,6 +91,7 @@ $recentExpenses = $recentExpensesQuery->fetchAll(PDO::FETCH_ASSOC);
             margin-bottom: 1rem;
         }
     </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container">
@@ -113,7 +114,7 @@ $recentExpenses = $recentExpensesQuery->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card">
                     <div class="card-body text-center">
                         <h5 class="card-title">Bilancio Totale</h5>
-                        <p class="card-text display-4">€<?= number_format($totalExpenses, 2) ?></p>
+                        <p class="card-text display-4" style="color: #fff;">€<?= number_format($totalExpenses, 2) ?></p>
                     </div>
                 </div>
             </div>

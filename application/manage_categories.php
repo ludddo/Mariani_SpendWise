@@ -90,23 +90,22 @@ function displayCategoriesForSelect($parentId, $categoriesByParent, $level = 0) 
 function displayCategories($parentId, $categoriesByParent, $level = 0) {
     if (isset($categoriesByParent[$parentId])) {
         foreach ($categoriesByParent[$parentId] as $category) {
-            echo "<li class='list-group-item'>";
+            echo "<li class='list-group-item d-flex justify-content-between align-items-center'>";
             // Indentazione visiva per le categorie
-            echo str_repeat("&nbsp;&nbsp;&nbsp;", $level) . htmlspecialchars($category['name']);
-            echo " <form action='manage_categories.php' method='POST' class='d-inline'>
-                    <input type='hidden' name='action' value='delete'>
-                    <input type='hidden' name='category_id' value='" . htmlspecialchars($category['id']) . "'>
-                    <button type='submit' class='btn btn-sm btn-danger float-end'>Elimina</button>
-                  </form>";
+            echo "<span>" . str_repeat("&nbsp;&nbsp;&nbsp;", $level) . htmlspecialchars($category['name']) . "</span>";
+            echo "<form action='manage_categories.php' method='POST' class='d-inline'>";
+            echo "<input type='hidden' name='action' value='delete'>";
+            echo "<input type='hidden' name='category_id' value='" . htmlspecialchars($category['id']) . "'>";
+            echo "<button type='submit' class='btn btn-sm btn-danger'>Elimina</button>";
+            echo "</form>";
+            echo "</li>";
             // Richiamo ricorsivo per sottocategorie
-            echo "<ul>";
+            echo "<ul class='list-group list-group-flush'>";
             displayCategories($category['id'], $categoriesByParent, $level + 1);
             echo "</ul>";
-            echo "</li>";
         }
     }
 }
-
 ?>
 
 <!DOCTYPE html>
@@ -116,6 +115,7 @@ function displayCategories($parentId, $categoriesByParent, $level = 0) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestione Categorie - SpendWise</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <div class="container mt-4">
@@ -149,7 +149,7 @@ function displayCategories($parentId, $categoriesByParent, $level = 0) {
                         <input type="text" class="form-control" id="name" name="name" required>
                     </div>
                     <div class="mb-3">
-                    <label for="parent_id" class="form-label">Categoria Principale (opzionale)</label>
+                        <label for="parent_id" class="form-label">Categoria Principale (opzionale)</label>
                         <select class="form-select" id="parent_id" name="parent_id">
                             <option value="" selected>Nessuna</option>
                             <?php displayCategoriesForSelect(0, $categoriesByParent); ?>
@@ -169,7 +169,6 @@ function displayCategories($parentId, $categoriesByParent, $level = 0) {
                 </ul>
             </div>
         </div>
-
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
