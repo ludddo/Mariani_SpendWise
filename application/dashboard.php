@@ -112,6 +112,190 @@ $recentExpenses = $recentExpensesQuery->fetchAll(PDO::FETCH_ASSOC);
     <title>SpendWise - Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Dashboard Layout */
+        .container {
+        padding: 2rem 1rem;
+        max-width: 1400px;
+        }
+
+        /* Dashboard Header */
+        .d-flex.justify-content-between {
+        margin: 2rem 0;
+        }
+
+        .button-group {
+        display: flex;
+        gap: 1rem;
+        }
+
+        /* Update stat boxes */
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        /* Dashboard Cards */
+        .row {
+        margin-bottom: 2rem;
+        }
+
+        .card {
+            background: var(--surface);
+            box-shadow: var(--card-shadow);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Update card title */
+        .card-title {
+            color: var(--primary-light);
+            font-weight: 600;
+        }
+
+        /* Total Balance Card Improvements */
+        .card .display-4 {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .card .text-secondary {
+            color: var(--text-secondary) !important;
+            font-size: 0.9rem;
+        }
+
+        .card h6 {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .card .text-primary {
+            color: var(--primary-light) !important;
+        }
+
+        /* Add color indicators */
+        .trend-up {
+            color: var(--money-green) !important;
+        }
+
+        .trend-down {
+            color: var(--money-red) !important;
+        }
+
+        /* Recent Expenses Table */
+        .table {
+        margin-bottom: 0;
+        }
+
+        .table thead th {
+        background: var(--surface-light);
+        color: var(--primary-light);
+        border-bottom: none;
+        padding: 1rem;
+        }
+
+        .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        color: var(--text);
+        border-color: rgba(255, 255, 255, 0.05);
+        }
+
+        .table-striped tbody tr:nth-of-type(odd) {
+        background-color: rgba(255, 255, 255, 0.02);
+        }
+
+        .table-striped tbody tr:nth-of-type(even) {
+        background-color: var(--surface);
+        }
+
+        /* Action Buttons in Table */
+        .table .btn {
+        margin: 0 0.25rem;
+        }
+
+        /* Chart Container */
+        .card canvas {
+        max-height: 300px !important;
+        margin: 1rem 0;
+        }
+
+        /* Modal Customization */
+        .modal-content {
+        background: var(--surface);
+        color: var(--text);
+        }
+
+        .modal-header {
+        background: var(--surface-light);
+        padding: 1.5rem;
+        }
+
+        .modal-body {
+        padding: 1.5rem;
+        }
+
+        .modal-footer {
+        background: var(--surface-light);
+        padding: 1.5rem;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+        .button-group {
+            flex-direction: column;
+            width: 100%;
+        }
+        
+        .button-group .btn {
+            width: 100%;
+            margin-bottom: 0.5rem;
+        }
+        
+        .table-responsive {
+            margin: 0;
+        }
+        
+        .table td {
+            white-space: nowrap;
+        }
+        
+        .card .display-4 {
+            font-size: 2rem;
+        }
+        }
+
+        /* Chart.js Legend Customization */
+        #categoryExpensesChart {
+        margin: 1rem auto;
+        }
+
+        .chartjs-tooltip {
+        background: var(--surface-light) !important;
+        border-radius: var(--border-radius);
+        color: var(--text) !important;
+        }
+
+        /* Add these to your existing variables */
+        :root {
+        --money-green: #00c853;
+        --money-red: #ff5252;
+        --accent-purple: #7c4dff;
+        --gradient-primary: linear-gradient(135deg, var(--primary-light) 0%, var(--accent-purple) 100%);
+        --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        --chart-colors: [
+            'rgba(187, 134, 252, 0.7)',
+            'rgba(3, 218, 198, 0.7)',
+            'rgba(255, 159, 64, 0.7)',
+            'rgba(75, 192, 192, 0.7)',
+            'rgba(153, 102, 255, 0.7)',
+            'rgba(255, 99, 132, 0.7)'
+        ];
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -139,8 +323,52 @@ $recentExpenses = $recentExpensesQuery->fetchAll(PDO::FETCH_ASSOC);
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body text-center">
-                        <h5 class="card-title">Bilancio Totale</h5>
-                        <p class="card-text display-4" style="color: white;">€<?= number_format($totalExpenses, 2) ?></p>
+                        <h5 class="card-title mb-4">Bilancio Totale</h5>
+                        <p class="card-text display-4 mb-4">
+                            €<?= number_format($totalExpenses, 2) ?>
+                        </p>
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <p class="text-secondary mb-1">Media mensile</p>
+                                    <?php
+                                    // First calculate average monthly
+                                    $avgMonthlyQuery = $pdo->prepare("
+                                        SELECT COALESCE(AVG(monthly_total), 0) as avg_monthly
+                                        FROM (
+                                            SELECT SUM(amount) as monthly_total 
+                                            FROM expenses 
+                                            WHERE user_id = :user_id 
+                                            GROUP BY YEAR(date), MONTH(date)
+                                        ) as monthly_totals
+                                    ");
+                                    $avgMonthlyQuery->execute(['user_id' => $userId]);
+                                    $avgMonthly = $avgMonthlyQuery->fetch(PDO::FETCH_ASSOC)['avg_monthly'];
+                                    ?>
+                                    <h6 class="mb-0" style="color: white">€<?= number_format($avgMonthly, 2) ?></h6>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="stat-box">
+                                    <p class="text-secondary mb-1">Ultimo mese</p>
+                                    <?php
+                                    $lastMonthQuery = $pdo->prepare("
+                                        SELECT COALESCE(SUM(amount), 0) as monthly_total 
+                                        FROM expenses 
+                                        WHERE user_id = :user_id 
+                                        AND date >= DATE_SUB(CURDATE(), INTERVAL 1 MONTH)
+                                    ");
+                                    $lastMonthQuery->execute(['user_id' => $userId]);
+                                    $lastMonthTotal = $lastMonthQuery->fetch(PDO::FETCH_ASSOC)['monthly_total'];
+                                    // Now we can safely compare with $avgMonthly
+                                    $trend = $lastMonthTotal > $avgMonthly ? 'trend-up' : 'trend-down';
+                                    ?>
+                                    <h6 class="mb-0 <?= $trend ?>">
+                                        €<?= number_format($lastMonthTotal, 2) ?>
+                                    </h6>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
